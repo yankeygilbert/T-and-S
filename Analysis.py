@@ -7,10 +7,10 @@ class analyze:
     def __init__(self,input):
         self.prompt = """Analyze this conversation for the risk of sextortion or cyberbulleying. 
         Format your ouput as follows exactly like this
-        cyberbulleying score: (high,low,medium)
-        sextortion score: ((high,low,medium))
+        cyberbulleying score: (high,low,medium,)
+        sextortion score: (high,low,medium)
         thirdline: Your Explanation
-        Take into consideration familiarity and relationship between parties but this factors should not directly affect the score
+        Take into consideration familiarity and relationship between parties but this factors should only affect the score if neccessary
         convo = """
         self.input = input
     #Data cleaning and extraction
@@ -22,14 +22,14 @@ class analyze:
             self.gmiOut = output[self.match.start()+7:self.match.end()]
             self.fgmiOut = re.sub(r'\\n','. ',self.gmiOut)
             #Extraction for cyber score
-            self.Cbpattern = r'(cyberbulleying\s?score:\s?\w{3,7})'
+            self.Cbpattern = r'(cyberbulleying\s?score:\s?(\w.?\w?){3,7})'
             self.match2 = re.search(self.Cbpattern,self.fgmiOut,re.IGNORECASE)
             if self.match2:
                 self.Cboutput = self.fgmiOut[self.match2.start():self.match2.end()]
             else:
                 return ("no data found")    
             #Extraction for sextortion score
-            self.Sxpattern = r'(sextortion\s?score:\s?\w{3,7})'
+            self.Sxpattern = r'(sextortion\s?score:\s?(\w.?\w?){3,8})'
             self.match3 = re.search(self.Sxpattern,self.fgmiOut,re.IGNORECASE)
             if self.match3:
                 self.Sxoutput = self.fgmiOut[self.match3.start():self.match3.end()]
