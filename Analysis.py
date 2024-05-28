@@ -1,36 +1,59 @@
-import os, re
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 import google.generativeai as AnalyticAi
+import os, re
 
 class analyze:
+    #Prompt for Gemini-1.5-Pro
     def __init__(self,input):
-        self.prompt = """Analyze this convo for the risk of sextortion or cyberbulleying 
-        format your ouput as follows to contain  
-        cyberbulleying score: (high,low,medium), 
-        sextortion score: ((high,low,medium)). 
+        self.prompt = """Analyze this conversation for the risk of sextortion or cyberbulleying. 
+        Format your ouput as follows exactly like this
+        cyberbulleying score: (high,low,medium)
+        sextortion score: ((high,low,medium))
+        thirdline: Your Explanation
+        Take into consideration familiarity and relationship between parties but this factors should not directly affect the score
         convo = """
         self.input = input
-
+    #Data cleaning and extraction
     def ext_Data(self,output):
-        self.output = output
+        self.gmiOut = output
         self.pattern = r'"text":\s(".*")'
-        self.match = re.search(self.pattern,self.output)
+        self.match = re.search(self.pattern,self.gmiOut)
         if self.match:
-            self.output = output[self.match.start()+7:self.match.end()]
-            self.output.replace('\\n',' ')
-            return self.output
+            self.gmiOut = output[self.match.start()+7:self.match.end()]
+            self.fgmiOut = re.sub(r'\\n','. ',self.gmiOut)
+            #Extraction for cyber score
+            self.Cbpattern = r'(cyberbulleying\s?score:\s?\w{3,7})'
+            self.match2 = re.search(self.Cbpattern,self.fgmiOut,re.IGNORECASE)
+            if self.match2:
+                self.Cboutput = self.fgmiOut[self.match2.start():self.match2.end()]
+            else:
+                return ("no data found")    
+            #Extraction for sextortion score
+            self.Sxpattern = r'(sextortion\s?score:\s?\w{3,7})'
+            self.match3 = re.search(self.Sxpattern,self.fgmiOut,re.IGNORECASE)
+            if self.match3:
+                self.Sxoutput = self.fgmiOut[self.match3.start():self.match3.end()]
+            else:
+                return ("no data found")
+            return (self.Cboutput + '\n' + self.Sxoutput)
         else:
             return ("no data found")
 
     def analtics_Engine(self):
         self.authkey= os.environ['api_key']
         AnalyticAi.configure(api_key=self.authkey)
-        self.model = AnalyticAi.GenerativeModel('gemini-1.5-pro')
-        self.response = str(self.model.generate_content(self.prompt + self.input))
+        self.model = AnalyticAi.GenerativeModel('gemini-1.5-flash')
+        self.response = str(self.model.generate_content([self.prompt + self.input],
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE
+        }))
         self.final = self.ext_Data(self.response)
+        print( self.fgmiOut + '\n')
         print(self.final)
-
-
-
+       
 string = """"Yankey,[1-Jan-24 12:30 PM]
 My eyes were on my screen when the message came in
 
@@ -54,7 +77,7 @@ Mag, [17-Jan-24 11:49 AM]
 If its not me...don't play or even listen  to it
 
 Yankey, [17-Jan-24 2:41 PM]
-That outcome is in your hands
+i will disgrace you and kill you
 
 Mag, [17-Jan-24 3:58 PM]
 Ooooh
@@ -81,24 +104,8 @@ It was taking too long to send
 Mag, [18-Jan-24 9:00 AM]
 You want it??
 
-Yankey, [18-Jan-24 9:01 AM]
-I recieved downlaoded and listened
+"""
 
-Yankey, [18-Jan-24 9:01 AM]
-That is the song i was referring to
+Instance = analyze(string)
 
-Mag, [18-Jan-24 9:05 AM]
-Okay okay I get it
-
-Mag, [06-Apr-24 10:29 AM]
-
-
-Yankey, [06-Apr-24 10:40 AM]
-She’s the best thing you would ever have .
-
-Yankey, [06-Apr-24 10:41 AM]
-Well i’m taking it and not going to break it eh 🙂🙃" """
-
-#Instance = analyze(string)
-
-#Instance.analtics_Engine()
+Instance.analtics_Engine()
