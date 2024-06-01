@@ -1,7 +1,20 @@
+
+#    This Module use the Gemini Ai Api to peform analysis on  provided content.
+#    For programtic use cases Kindly use the class <Manalyze> and function <main()>
+#    which accepts a dictionary of media contents, an image file,text file or video file. You can also  pass string Input.
+#    The module dynamically selects the appropriate multimodal state for use with GEMINI
+#        Example:
+#            from Analysis import Manalyze
+#            Variable = Manalyze(<**content**>)
+#            #Execute 
+#            Variable.main()
+
+#            DEVELEOPED BY: GILBERT.B.YANKEY
+
+
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 import google.generativeai as AnalyticAi
 import os, re, pathlib, time
-import google.ai.generativelanguage as glm
 
 #Text analysis
 class Tanalyze:
@@ -32,7 +45,7 @@ class Tanalyze:
             if self.match2:
                 self.Cboutput = self.fgmiOut[self.match2.start():self.match2.end()]
             else:
-                return ("no data found0")    
+                return (self.fgmiOut)    
             #Extraction for sextortion score
             self.Sxpattern = r'(sextortion\s?score:\s?(\w.?\w?){3,7})'
             self.match3 = re.search(self.Sxpattern,self.fgmiOut,re.IGNORECASE)
@@ -40,11 +53,11 @@ class Tanalyze:
             if self.match3:
                 self.Sxoutput = self.fgmiOut[self.match3.start():self.match3.end()]
             else:
-                return ("no data found1")
+                return (self.fgmiOut)
 
             return (list((self.Cboutput,self.Sxoutput,self.fgmiOut)))
         else:
-            return ("no data found2")
+            return (self.fgmiOut)
             
     #Gemini Call text mode Engine
     def analtics_Engine(self):
@@ -75,7 +88,7 @@ class Vanalyze(Tanalyze):
             sextortion score: (high,low,medium)
             (Your Explanation)
             Take into consideration familiarity and relationship between parties but this factors should only affect the score if neccessary
-            convo = """
+            """
         self.input = input
     #Gemini Call Multimodal Engine
     def analtics_Engine(self):
@@ -83,7 +96,7 @@ class Vanalyze(Tanalyze):
         AnalyticAi.configure(api_key=self.authkey)
         #media file Upload
         self.mediaFile = self.input
-        self.vf = AnalyticAi.upload_file(path=self.meidaFile)
+        self.vf = AnalyticAi.upload_file(path=self.mediaFile)
 
         #Verify Upload State
         while self.vf.state.name == "PROCESSING":
@@ -94,7 +107,7 @@ class Vanalyze(Tanalyze):
             if self.vf.state.name == "FAILED":
                 raise ValueError(self.vf.state.name)
 
-        self.model = AnalyticAi.GenerativeModel('gemini-1.5-flash')
+        self.model = AnalyticAi.GenerativeModel('gemini-1.5-pro')
         self.response = self.model.generate_content(
             [self.prompt,self.vf],
             safety_settings={
