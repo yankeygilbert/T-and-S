@@ -2,45 +2,24 @@ import cv2
 import numpy as np
 import pygetwindow as gw
 import pyautogui
-import time
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QPushButton
+import time ,glob
 
-class PermissionDialog(QDialog):
-    def __init__(self):
-        super().__init__()
+def is_whatsapp_running(window_title):
+    return any(window.title == window_title for window in gw.getWindowsWithTitle(window_title))
 
-        self.setWindowTitle("Permissions")
-        self.setFixedSize(300, 150)
-
-        layout = QVBoxLayout()
-
-        label = QLabel("Allow recording WhatsApp window?")
-        layout.addWidget(label)
-
-        allow_button = QPushButton("Allow")
-        allow_button.clicked.connect(self.accept)
-        layout.addWidget(allow_button)
-
-        deny_button = QPushButton("Deny")
-        deny_button.clicked.connect(self.reject)
-        layout.addWidget(deny_button)
-
-        self.setLayout(layout)
-
-def is_whatsapp_active(window_title):
-    return gw.getActiveWindowTitle() == window_title
+def get_permission():
+    while True:
+        response = input("Allow recording WhatsApp window? (y/n): ").strip().lower()
+        if response in ['y', 'n']:
+            return response == 'y'
+        print("Invalid input. Please enter 'y' for Yes or 'n' for No.")
 
 if __name__ == "__main__":
-    app = QApplication([])
-
     window_title = "WhatsApp"  # Title of the WhatsApp window
-    permission_dialog = PermissionDialog()
 
     while True:
-        if is_whatsapp_active(window_title):
-            result = permission_dialog.exec()
-            if result == QDialog.Accepted:
+        if is_whatsapp_running(window_title):
+            if get_permission():
                 output_filename = "whatsapp_recording.avi"  # Output filename
 
                 window = gw.getWindowsWithTitle(window_title)
@@ -53,7 +32,7 @@ if __name__ == "__main__":
                 fourcc = cv2.VideoWriter_fourcc(*'XVID')
                 out = cv2.VideoWriter(output_filename, fourcc, 20, (bbox[2], bbox[3]))
 
-                while is_whatsapp_active(window_title):
+                while is_whatsapp_running(window_title):
                     img = pyautogui.screenshot(region=bbox)
                     frame = np.array(img)
                     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -65,5 +44,16 @@ if __name__ == "__main__":
             else:
                 print("Recording denied.")
             break
+        time.sleep(1)  # Check every second if WhatsApp is running
 
-    app.exit()
+    if glob.glob("*.avi"):
+        from Soi import Manalyze
+
+        query = Manalyze('whatsapp_recording.avi')
+        outt = query.main()
+        if type(outt) == type(" "):
+            print(outt)
+        else: 
+            print(outt[2])
+           
+
