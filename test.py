@@ -1,4 +1,4 @@
-from Soi import Manalyze
+from GeminImplementation import Manalyze
 
 string = """"Yankey,[1-Jan-24 12:30 PM]
 My eyes were on my screen when the message came in
